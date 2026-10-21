@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Build Meta 5e</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+  :root{
+    /* layout: tablet de piedra sobre un fondo de escamas de dragón ardiendo */
+    --bg: #0e0705;
+    --panel: rgba(18,11,10,0.76);
+    --panel-edge: rgba(230,120,40,0.3);
+    --fg: #f1e6d8;
+    --muted: #c4a390;
+    --accent: #f0893a;
+    --accent2: #ffce6b;
+    --good: #6fd98a;
+    --warn: #f0893a;
+    --bad: #e2535c;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter', system-ui, sans-serif;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  canvas#bg{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:0;
+    display:block;
+    background: radial-gradient(ellipse at 50% 35%, #241a10 0%, #0e0705 70%);
+  }
+  .wrap{
+    position:relative;
+    z-index:1;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-block: 48px 64px;
+    gap: 28px;
+  }
+  header{
+    text-align:center;
+    max-width: 640px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  h1{
+    font-family:'Cinzel', serif;
+    font-weight:700;
+    font-size: clamp(1.7rem, 1.2rem + 2vw, 2.6rem);
+    margin:0;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+    color: var(--fg);
+    text-shadow: 0 0 20px rgba(240,137,58,0.4);
+  }
+  header p{
+    margin:0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height:1.5;
+  }
+  .card{
+    width: min(560px, 100%);
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--panel-edge);
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3) inset, 0 20px 60px rgba(0,0,0,0.55);
+    padding: 26px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width:0;
+  }
+  .field label{
+    font-family:'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .selects{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px;
+  }
+  @media (max-width: 480px){
+    .selects{ grid-template-columns: 1fr; }
+  }
+  select{
+    appearance:none;
+    -webkit-appearance:none;
+    width:100%;
+    min-width:0;
+    font: 600 0.95rem 'Inter', sans-serif;
+    color: var(--fg);
+    background: rgba(255,255,255,0.04) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0L5 6L10 0' fill='none' stroke='%23f0893a' stroke-width='1.4'/></svg>") no-repeat right 14px center;
+    border: 1px solid rgba(240,137,58,0.32);
+    border-radius: 4px;
+    padding: 11px 32px 11px 12px;
+  }
+  select:focus-visible{
+    outline: 2px solid var(--accent2);
+    outline-offset: 2px;
+  }
+  .crest{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 18px;
+  }
+  .badge{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    min-width:0;
+  }
+  .badge .portrait{
+    width: 108px;
+    height: 148px;
+    object-fit: cover;
+    object-position: top center;
+    border-radius: 6px;
+    border: 1px solid rgba(255,206,107,0.4);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.03);
+  }
+  .badge .ring{
+    width:72px;
+    height:72px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(240,137,58,0.35);
+    color: var(--accent);
+    box-shadow: 0 0 20px rgba(240,137,58,0.18) inset;
+  }
+  .badge.cls .ring{
+    color: var(--accent2);
+    border-color: rgba(255,206,107,0.4);
+    box-shadow: 0 0 20px rgba(255,206,107,0.18) inset;
+  }
+  .badge .ring svg{ width:36px; height:36px; }
+  .badge .name{
+    font-family:'Cinzel', serif;
+    font-size: 0.74rem;
+    color: var(--muted);
+    text-align:center;
+  }
+  .crest-x{
+    font-family:'Cinzel', serif;
+    color: var(--muted);
+    font-size: 1.2rem;
+    flex-shrink:0;
+  }
+  .result{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(240,137,58,0.2);
+  }
+  @media (max-width: 480px){
+    .result{ flex-direction: column; align-items:flex-start; gap: 14px; }
+  }
+  .d20{
+    position:relative;
+    width:96px;
+    height:96px;
+    flex-shrink:0;
+    color: var(--accent);
+  }
+  .d20 svg{ width:100%; height:100%; display:block; }
+  .d20-score{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:inherit;
+  }
+  .d20-score .num{
+    font-family:'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight:700;
+    font-size: 1.5rem;
+    line-height:1;
+  }
+  .d20-score .den{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    margin-top:2px;
+  }
+  .result-text{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex:1;
+    min-width:0;
+  }
+  .tier{
+    font-family:'Cinzel', serif;
+    font-weight:700;
+    font-size: 1.05rem;
+    letter-spacing:0.02em;
+  }
+  .why{
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height:1.5;
+  }
+  .stats{
+    display:grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap:8px;
+  }
+  @media (max-width: 480px){
+    .stats{ grid-template-columns: repeat(3, 1fr); }
+  }
+  .stat{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding: 10px 4px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.02);
+  }
+  .stat.on{
+    border-color: rgba(240,137,58,0.55);
+    background: rgba(240,137,58,0.1);
+  }
+  .stat .k{
+    font-family:'Cinzel', serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+  .stat.on .k{ color: var(--accent); }
+  .stat .v{
+    font-family:'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight:700;
+    font-size: 1rem;
+  }
+  footer{
+    color: var(--muted);
+    font-size: 0.78rem;
+    max-width: 520px;
+    text-align:center;
+    line-height:1.5;
+  }
+  @media (prefers-reduced-motion: reduce){
+    canvas#bg{ opacity: 0.9; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="bg"></canvas>
+<div class="wrap">
+  <header>
+    <h1>Build Meta 5e</h1>
+    <p>Elegí raza y clase de D&amp;D 5e. Calcula qué tan alineados están los bonos de característica con lo que esa clase necesita — del 0 al 10.</p>
+  </header>
+
+  <div class="card">
+    <div class="selects">
+      <div class="field">
+        <label for="race">Raza</label>
+        <select id="race"></select>
+      </div>
+      <div class="field">
+        <label for="cls">Clase</label>
+        <select id="cls"></select>
+      </div>
+    </div>
+
+    <div class="crest">
+      <div class="badge race"><img class="portrait" id="racePortrait" alt="" hidden><div class="ring" id="raceIcon"></div><div class="name" id="raceName"></div></div>
+      <div class="crest-x">+</div>
+      <div class="badge cls"><img class="portrait" id="clsPortrait" alt=""><div class="ring" id="clsIcon"></div><div class="name" id="clsName"></div></div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="result">
+      <div class="d20" id="d20">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,4 89.8,27 89.8,73 50,96 10.2,73 10.2,27" stroke="currentColor" stroke-width="3" fill="rgba(255,255,255,0.04)"/>
+          <g stroke="currentColor" stroke-width="1.3" opacity="0.55">
+            <line x1="50" y1="50" x2="50" y2="4"/>
+            <line x1="50" y1="50" x2="89.8" y2="27"/>
+            <line x1="50" y1="50" x2="89.8" y2="73"/>
+            <line x1="50" y1="50" x2="50" y2="96"/>
+            <line x1="50" y1="50" x2="10.2" y2="73"/>
+            <line x1="50" y1="50" x2="10.2" y2="27"/>
+          </g>
+        </svg>
+        <div class="d20-score">
+          <span class="num" id="scoreNum">0.0</span>
+          <span class="den">/ 10</span>
+        </div>
+      </div>
+      <div class="result-text">
+        <div class="tier" id="tier">—</div>
+        <div class="why" id="why">Elegí una combinación.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    El puntaje compara solo bonos de característica (reglas clásicas de razas/subrazas del PHB) contra lo que cada clase pesa más. No contempla rasgos raciales, feats ni elección de trasfondo — es un heurístico para divertirse, no un tier list oficial. Íconos: sigilos propios, no arte oficial de Wizards of the Coast.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var RACES = [
+    { id:"humano_variante", label:"Humano (Variante)", fixed:{}, floating:2 },
+    { id:"enano_colinas",   label:"Enano de las Colinas", fixed:{con:2,wis:1} },
+    { id:"enano_montana",   label:"Enano de la Montaña", fixed:{con:2,str:2} },
+    { id:"elfo_alto",       label:"Elfo Alto", fixed:{dex:2,int:1} },
+    { id:"elfo_bosque",     label:"Elfo del Bosque", fixed:{dex:2,wis:1} },
+    { id:"elfo_oscuro",     label:"Elfo Oscuro (Drow)", fixed:{dex:2,cha:1} },
+    { id:"mediano_ligero",  label:"Mediano Pies Ligeros", fixed:{dex:2,cha:1} },
+    { id:"mediano_robusto", label:"Mediano Robusto", fixed:{dex:2,con:1} },
+    { id:"gnomo_bosque",    label:"Gnomo del Bosque", fixed:{int:2,dex:1} },
+    { id:"gnomo_rocas",     label:"Gnomo de las Rocas", fixed:{int:2,con:1} },
+    { id:"semielfo",        label:"Semielfo", fixed:{cha:2}, floating:2 },
+    { id:"semiorco",        label:"Semiorco", fixed:{str:2,con:1} },
+    { id:"tiefling",        label:"Tiefling", fixed:{cha:2,int:1} },
+    { id:"dragonborn",      label:"Dragonborn", fixed:{str:2,cha:1} }
+  ];
+
+  var CLASSES = [
+    { id:"barbaro",     label:"Bárbaro",    builds:[{str:3,con:2}],                 wants:"FUE y CON" },
+    { id:"bardo",       label:"Bardo",      builds:[{cha:3,dex:1}],                 wants:"CAR y DES" },
+    { id:"clerigo",     label:"Clérigo",    builds:[{wis:3,con:1,str:1}],           wants:"SAB, CON y FUE" },
+    { id:"druida",      label:"Druida",     builds:[{wis:3,con:1}],                 wants:"SAB y CON" },
+    { id:"guerrero",    label:"Guerrero",   builds:[{str:3,con:2},{dex:3,con:2}],   wants:"FUE o DES, más CON" },
+    { id:"monje",       label:"Monje",      builds:[{dex:3,wis:2}],                 wants:"DES y SAB" },
+    { id:"paladin",     label:"Paladín",    builds:[{str:2,cha:2,con:1}],           wants:"FUE, CAR y CON" },
+    { id:"explorador",  label:"Explorador", builds:[{dex:2,wis:2,con:1}],           wants:"DES, SAB y CON" },
+    { id:"picaro",      label:"Pícaro",     builds:[{dex:3,cha:1}],                 wants:"DES y CAR" },
+    { id:"hechicero",   label:"Hechicero",  builds:[{cha:3,con:2}],                 wants:"CAR y CON" },
+    { id:"brujo",       label:"Brujo",      builds:[{cha:3,con:1}],                 wants:"CAR y CON" },
+    { id:"mago",        label:"Mago",       builds:[{int:3,con:1,dex:1}],           wants:"INT, CON y DES" }
+  ];
+
+  var CLASS_PORTRAIT = {
+    barbaro: "Assets/clase-barbaro.png",
+    bardo: "Assets/clase-bardo.png",
+    clerigo: "Assets/clase-clerigo.png",
+    druida: "Assets/clase-druida.png",
+    guerrero: "Assets/clase-guerrero.png",
+    monje: "Assets/clase-monje.png",
+    paladin: "Assets/clase-paladin.png",
+    explorador: "Assets/clase-explorador.png",
+    picaro: "Assets/clase-picaro.png",
+    hechicero: "Assets/clase-hechicero.png",
+    brujo: "Assets/clase-brujo.png",
+    mago: "Assets/clase-mago.png"
+  };
+
+  var RACE_PORTRAIT = {
+    enano_colinas: "Assets/raza-enano_colinas.png",
+    enano_montana: "Assets/raza-enano_montana.png",
+    elfo_alto: "Assets/raza-elfo_alto.png",
+    elfo_bosque: "Assets/raza-elfo_bosque.png",
+    elfo_oscuro: "Assets/raza-elfo_oscuro.png",
+    mediano_ligero: "Assets/raza-mediano_ligero.png",
+    mediano_robusto: "Assets/raza-mediano_robusto.png",
+    gnomo_bosque: "Assets/raza-gnomo_bosque.png",
+    gnomo_rocas: "Assets/raza-gnomo_rocas.png",
+    semielfo: "Assets/raza-semielfo.png",
+    semiorco: "Assets/raza-semiorco.png",
+    tiefling: "Assets/raza-tiefling.png",
+    dragonborn: "Assets/raza-dragonborn.png"
+  };
+
+  var STAT_LABEL = {str:"FUE",dex:"DES",con:"CON",int:"INT",wis:"SAB",cha:"CAR"};
+  var STAT_ORDER = ["str","dex","con","int","wis","cha"];
+
+  var RING = '<circle cx="24" cy="24" r="21" stroke="currentColor" stroke-width="1" opacity="0.3"/>';
+
+  var RACE_ICON = {
+    humano_variante: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 6 L29 21 L44 24 L29 27 L24 42 L19 27 L4 24 L19 21 Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="24" cy="24" r="2.6" fill="currentColor"/></svg>',
+    enano_colinas: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M6 33 C14 21 19 21 24 27 C29 21 34 21 42 33 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><line x1="6" y1="33" x2="42" y2="33" stroke="currentColor" stroke-width="2.2"/><circle cx="24" cy="24" r="1.6" fill="currentColor"/></svg>',
+    enano_montana: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M7 34 L20 11 L27 23 L33 13 L41 34 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><line x1="7" y1="34" x2="41" y2="34" stroke="currentColor" stroke-width="2.2"/><line x1="19" y1="30" x2="29" y2="30" stroke="currentColor" stroke-width="1.4" opacity="0.7"/></svg>',
+    elfo_alto: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M29 7 C18 11 14 22 20 32 C26 39 35 40 41 34 C33 36 23 30 23 20 C23 15 25 10 29 7 Z" fill="currentColor"/><circle cx="33" cy="15" r="1.3" fill="currentColor"/></svg>',
+    elfo_bosque: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M18 11 C27 15 27 26 18 33 C9 26 9 15 18 11 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M30 15 C37 19 37 28 30 35 C23 28 23 19 30 15 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><line x1="18" y1="14" x2="18" y2="31" stroke="currentColor" stroke-width="1"/><line x1="30" y1="18" x2="30" y2="33" stroke="currentColor" stroke-width="1"/></svg>',
+    elfo_oscuro: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<ellipse cx="24" cy="24" rx="6.5" ry="8.5" fill="currentColor"/><circle cx="24" cy="16" r="2.6" fill="currentColor"/><g stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="19" y1="19" x2="8" y2="12"/><line x1="18" y1="23" x2="6" y2="21"/><line x1="18" y1="28" x2="6" y2="30"/><line x1="19" y1="32" x2="10" y2="39"/><line x1="29" y1="19" x2="40" y2="12"/><line x1="30" y1="23" x2="42" y2="21"/><line x1="30" y1="28" x2="42" y2="30"/><line x1="29" y1="32" x2="38" y2="39"/></g></svg>',
+    mediano_ligero: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="18" cy="18" r="7.5" fill="currentColor"/><circle cx="30" cy="18" r="7.5" fill="currentColor"/><circle cx="18" cy="30" r="7.5" fill="currentColor"/><circle cx="30" cy="30" r="7.5" fill="currentColor"/><line x1="24" y1="30" x2="24" y2="40" stroke="currentColor" stroke-width="2"/></svg>',
+    mediano_robusto: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M14 15 H29 V35 C29 38 26 40 21.5 40 C17 40 14 38 14 35 Z" stroke="currentColor" stroke-width="2.2"/><path d="M29 19 H35 C37 19 38 20 38 22 V27 C38 29 37 30 35 30 H29" stroke="currentColor" stroke-width="2"/><line x1="14" y1="21" x2="29" y2="21" stroke="currentColor" stroke-width="1.6" opacity="0.7"/></svg>',
+    gnomo_bosque: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M9 21 C9 11 39 11 39 21 C39 25 32 25 24 25 C16 25 9 25 9 21 Z" fill="currentColor"/><path d="M18 25 H30 V36 C30 40 27 42 24 42 C21 42 18 40 18 36 Z" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="17" r="1.3" fill="var(--bg)"/><circle cx="30" cy="16" r="1.5" fill="var(--bg)"/></svg>',
+    gnomo_rocas: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="24" cy="24" r="8" stroke="currentColor" stroke-width="2.2"/><circle cx="24" cy="24" r="3" fill="currentColor"/><g stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="24" y1="6" x2="24" y2="12"/><line x1="24" y1="36" x2="24" y2="42"/><line x1="6" y1="24" x2="12" y2="24"/><line x1="36" y1="24" x2="42" y2="24"/><line x1="12" y1="12" x2="16" y2="16"/><line x1="32" y1="32" x2="36" y2="36"/><line x1="36" y1="12" x2="32" y2="16"/><line x1="16" y1="32" x2="12" y2="36"/></g></svg>',
+    semielfo: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="19" cy="24" r="12.5" stroke="currentColor" stroke-width="2"/><circle cx="29" cy="24" r="12.5" stroke="currentColor" stroke-width="2"/></svg>',
+    semiorco: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M17 15 C13 22 15 31 20 33 C18 26 19 19 22 15 Z" fill="currentColor"/><path d="M31 15 C35 22 33 31 28 33 C30 26 29 19 26 15 Z" fill="currentColor"/></svg>',
+    tiefling: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M19 31 C11 25 11 13 19 7 C15 17 17 25 23 29 Z" fill="currentColor"/><path d="M29 31 C37 25 37 13 29 7 C33 17 31 25 25 29 Z" fill="currentColor"/></svg>',
+    dragonborn: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M8 28 C8 18 16 10 26 10 C30 10 32 8 34 5 C34 10 32 13 30 15 C38 17 42 23 40 30 C36 26 30 24 24 24 C18 24 12 26 8 28 Z" fill="currentColor"/><circle cx="30" cy="18" r="1.6" fill="var(--bg)"/><circle cx="37" cy="26" r="1" fill="var(--bg)"/></svg>'
+  };
+
+  var CLASS_ICON = {
+    barbaro: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<line x1="14" y1="35" x2="33" y2="16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M25 11 C30 8 37 9 38 15 C39 20 34 23 29 22 L23 22 Z" fill="currentColor"/><circle cx="14" cy="35" r="2" fill="currentColor"/></svg>',
+    bardo: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M14 30 C14 23 18 19 22 20 C27 21 28 27 25 32 C22 37 14 37 14 30 Z" stroke="currentColor" stroke-width="2.2"/><line x1="24" y1="21" x2="33" y2="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="33" cy="9" r="1.8" fill="currentColor"/><line x1="18" y1="26" x2="23" y2="28" stroke="currentColor" stroke-width="1.3"/><line x1="18" y1="30" x2="23" y2="31" stroke="currentColor" stroke-width="1.3"/></svg>',
+    clerigo: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="24" cy="24" r="7" stroke="currentColor" stroke-width="2.4"/><circle cx="24" cy="24" r="2" fill="currentColor"/><g stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="24" y1="6" x2="24" y2="13"/><line x1="24" y1="35" x2="24" y2="42"/><line x1="6" y1="24" x2="13" y2="24"/><line x1="35" y1="24" x2="42" y2="24"/><line x1="12" y1="12" x2="17" y2="17"/><line x1="31" y1="31" x2="36" y2="36"/><line x1="36" y1="12" x2="31" y2="17"/><line x1="17" y1="31" x2="12" y2="36"/></g></svg>',
+    druida: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 8 C37 12 39 26 24 40 C9 26 11 12 24 8 Z" stroke="currentColor" stroke-width="2.2"/><line x1="24" y1="12" x2="24" y2="36" stroke="currentColor" stroke-width="1.8"/><path d="M24 18 L18 23 M24 24 L30 29 M24 18 L30 23 M24 24 L18 29" stroke="currentColor" stroke-width="1.2"/></svg>',
+    guerrero: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<line x1="24" y1="7" x2="24" y2="30" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><line x1="16" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="M18 30 L30 30 L24 41 Z" fill="currentColor"/><circle cx="24" cy="7" r="1.8" fill="currentColor"/></svg>',
+    monje: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="24" cy="24" r="15" stroke="currentColor" stroke-width="2.2"/><circle cx="24" cy="24" r="9" stroke="currentColor" stroke-width="1.4" opacity="0.6"/><circle cx="24" cy="24" r="3.4" fill="currentColor"/></svg>',
+    paladin: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 7 L37 12 V22 C37 32 31 39 24 42 C17 39 11 32 11 22 V12 Z" stroke="currentColor" stroke-width="2.2"/><line x1="24" y1="16" x2="24" y2="31" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><line x1="17" y1="22" x2="31" y2="22" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    explorador: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M15 9 C27 16 27 32 15 39" stroke="currentColor" stroke-width="2.2"/><line x1="15" y1="9" x2="15" y2="39" stroke="currentColor" stroke-width="1.3" stroke-dasharray="2 3"/><line x1="10" y1="24" x2="37" y2="24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M37 24 L30 19 M37 24 L30 29" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 21 L16 24 L12 27" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    picaro: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<line x1="24" y1="9" x2="24" y2="29" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M16 16 L32 16 L28 19 L20 19 Z" fill="currentColor"/><path d="M19 29 L29 29 L24 39 Z" fill="currentColor"/></svg>',
+    hechicero: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<g stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="24" y1="8" x2="24" y2="40"/><line x1="8" y1="24" x2="40" y2="24"/><line x1="14" y1="14" x2="34" y2="34"/><line x1="34" y1="14" x2="14" y2="34"/></g><circle cx="24" cy="24" r="4.2" fill="currentColor"/><circle cx="24" cy="8" r="1.4" fill="currentColor"/><circle cx="24" cy="40" r="1.4" fill="currentColor"/><circle cx="8" cy="24" r="1.4" fill="currentColor"/><circle cx="40" cy="24" r="1.4" fill="currentColor"/></svg>',
+    brujo: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 9 L41 37 H7 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><ellipse cx="24" cy="29" rx="9" ry="5.5" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="29" r="2.6" fill="currentColor"/></svg>',
+    mago: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 6 L34 33 H14 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M11 33 C16 30 32 30 37 33" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M26 16 L27 18 L29 19 L27 20 L26 22 L25 20 L23 19 L25 18 Z" fill="currentColor"/></svg>'
+  };
+
+  function scoreFor(race, cls){
+    var best = null;
+    for (var b=0; b<cls.builds.length; b++){
+      var weights = cls.builds[b];
+      var stats = {str:0,dex:0,con:0,int:0,wis:0,cha:0};
+      for (var k in race.fixed) stats[k] += race.fixed[k];
+
+      var order = Object.keys(weights).sort(function(a,c){ return weights[c]-weights[a]; });
+      var floatLeft = race.floating || 0;
+      for (var i=0; i<order.length && floatLeft>0; i++){
+        stats[order[i]] += 1;
+        floatLeft--;
+      }
+
+      var raw=0, maxW=0;
+      for (var stat in weights){ raw += stats[stat]*weights[stat]; maxW += weights[stat]; }
+      var norm = Math.max(0, Math.min(10, (raw/(maxW*2))*10));
+
+      if (!best || norm > best.norm) best = { norm: norm, weights: weights, stats: stats };
+    }
+    return best;
+  }
+
+  function tierFor(norm){
+    if (norm >= 9)   return { label:"S — Rotura total", color:"var(--good)" };
+    if (norm >= 7.5) return { label:"A — Muy fuerte", color:"var(--good)" };
+    if (norm >= 6)   return { label:"B+ — Sólido", color:"var(--accent)" };
+    if (norm >= 4.5) return { label:"B — Competente", color:"var(--accent)" };
+    if (norm >= 3)   return { label:"C — Viable con esfuerzo", color:"var(--warn)" };
+    return { label:"D — Puro roleo", color:"var(--bad)" };
+  }
+
+  function fill(select, items){
+    items.forEach(function(it){
+      var opt = document.createElement("option");
+      opt.value = it.id;
+      opt.textContent = it.label;
+      select.appendChild(opt);
+    });
+  }
+
+  var raceSel = document.getElementById("race");
+  var clsSel  = document.getElementById("cls");
+  fill(raceSel, RACES);
+  fill(clsSel, CLASSES);
+  raceSel.value = "enano_montana";
+  clsSel.value = "guerrero";
+
+  var statsEl = document.getElementById("stats");
+  var d20El = document.getElementById("d20");
+  var scoreNumEl = document.getElementById("scoreNum");
+  var tierEl  = document.getElementById("tier");
+  var whyEl   = document.getElementById("why");
+  var raceIconEl = document.getElementById("raceIcon");
+  var clsIconEl  = document.getElementById("clsIcon");
+  var raceNameEl = document.getElementById("raceName");
+  var clsNameEl  = document.getElementById("clsName");
+  var clsPortraitEl = document.getElementById("clsPortrait");
+  var racePortraitEl = document.getElementById("racePortrait");
+
+  function render(){
+    var race = RACES.find(function(r){ return r.id === raceSel.value; });
+    var cls  = CLASSES.find(function(c){ return c.id === clsSel.value; });
+    var result = scoreFor(race, cls);
+    var norm = Math.round(result.norm * 10) / 10;
+    var tier = tierFor(norm);
+
+    scoreNumEl.textContent = norm.toFixed(1);
+    tierEl.textContent = tier.label;
+    tierEl.style.color = tier.color;
+    d20El.style.color = tier.color;
+
+    raceIconEl.innerHTML = RACE_ICON[race.id];
+    clsIconEl.innerHTML = CLASS_ICON[cls.id];
+    raceNameEl.textContent = race.label;
+    clsNameEl.textContent = cls.label;
+    clsPortraitEl.src = CLASS_PORTRAIT[cls.id];
+    clsPortraitEl.alt = cls.label;
+
+    if (RACE_PORTRAIT[race.id]) {
+      racePortraitEl.src = RACE_PORTRAIT[race.id];
+      racePortraitEl.alt = race.label;
+      racePortraitEl.hidden = false;
+    } else {
+      racePortraitEl.hidden = true;
+    }
+
+    statsEl.innerHTML = "";
+    STAT_ORDER.forEach(function(stat){
+      var bonus = result.stats[stat] || 0;
+      var weighted = (result.weights[stat] || 0) > 0;
+      var div = document.createElement("div");
+      div.className = "stat" + (weighted ? " on" : "");
+      div.innerHTML = '<span class="k">' + STAT_LABEL[stat] + '</span><span class="v">' +
+        (bonus > 0 ? "+" + bonus : "+0") + "</span>";
+      statsEl.appendChild(div);
+    });
+
+    var hits = STAT_ORDER.filter(function(s){ return (result.weights[s]||0)>0 && (result.stats[s]||0)>0; })
+      .map(function(s){ return STAT_LABEL[s] + " +" + result.stats[s]; });
+    var phrase = hits.length
+      ? cls.label + " pide " + cls.wants + ". " + race.label + " te suma " + hits.join(", ") + "."
+      : cls.label + " pide " + cls.wants + ", y " + race.label + " no te da nada ahí — build de pura voluntad.";
+    whyEl.textContent = phrase;
+  }
+
+  raceSel.addEventListener("change", render);
+  clsSel.addEventListener("change", render);
+  render();
+
+  // --- fondo: escamas de dragón sobre fuego en movimiento ---
+  var canvas = document.getElementById("bg");
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  try {
+    var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+    if (!gl) throw new Error("no webgl");
+
+    var vsSource = [
+      "attribute vec2 a_pos;",
+      "void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }"
+    ].join("\n");
+
+    var fsSource = [
+      "precision mediump float;",
+      "uniform vec2  u_resolution;",
+      "uniform float u_time;",
+      "",
+      "float hash(vec2 p){",
+      "  return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453123);",
+      "}",
+      "float noise(vec2 p){",
+      "  vec2 i = floor(p); vec2 f = fract(p);",
+      "  float a = hash(i); float b = hash(i + vec2(1.0,0.0));",
+      "  float c = hash(i + vec2(0.0,1.0)); float d = hash(i + vec2(1.0,1.0));",
+      "  vec2 u = f*f*(3.0-2.0*f);",
+      "  return mix(a,b,u.x) + (c-a)*u.y*(1.0-u.x) + (d-b)*u.x*u.y;",
+      "}",
+      "float fbm(vec2 p){",
+      "  float v = 0.0; float amp = 0.5;",
+      "  for (int i = 0; i < 5; i++){",
+      "    v += amp * noise(p);",
+      "    p *= 2.02;",
+      "    amp *= 0.5;",
+      "  }",
+      "  return v;",
+      "}",
+      "",
+      "void main(){",
+      "  vec2 uv = (gl_FragCoord.xy - 0.5*u_resolution) / u_resolution.y;",
+      "  float t = u_time;",
+      "",
+      "  vec2 muv = uv*1.6 + vec2(3.0, 1.0);",
+      "  vec2 warp = vec2(fbm(muv + t*0.15), fbm(muv + vec2(5.2,1.3) + t*0.12)) - 0.5;",
+      "  float h = fbm(muv + warp*0.7 + vec2(t*0.035, -t*0.02));",
+      "",
+      "  float paper = fbm(uv*5.0 + 50.0) * 0.08;",
+      "  vec3 ink       = vec3(0.07,0.055,0.045);",
+      "  vec3 parchment = vec3(0.30,0.22,0.13);",
+      "  vec3 glowLine  = vec3(0.88,0.58,0.24);",
+      "",
+      "  vec3 col = mix(ink, parchment, 0.22 + paper);",
+      "",
+      "  float lines = abs(fract(h*9.0) - 0.5);",
+      "  float contour = smoothstep(0.035, 0.0, lines);",
+      "  col = mix(col, glowLine, contour*0.55);",
+      "",
+      "  float path = smoothstep(0.02, 0.0, abs(h - 0.52));",
+      "  col = mix(col, glowLine*1.3, path*0.5);",
+      "",
+      "  vec2 f1 = uv*1.1 + vec2(t*0.05, t*0.015);",
+      "  vec2 f2 = uv*2.0 - vec2(t*0.09, -t*0.02);",
+      "  float fog = fbm(f1)*0.6 + fbm(f2)*0.4;",
+      "  fog = smoothstep(0.35, 0.85, fog);",
+      "  vec3 mist = vec3(0.74,0.76,0.80);",
+      "  col = mix(col, mist, fog*0.5);",
+      "",
+      "  vec2 ep = uv*1.4; ep.y += t*0.35;",
+      "  float wisps = pow(fbm(ep*2.0), 3.0) * (1.0 - fog*0.6);",
+      "  col += wisps * mist * 0.12;",
+      "",
+      "  float r = length(uv);",
+      "  col *= smoothstep(1.3, 0.2, r);",
+      "",
+      "  gl_FragColor = vec4(col, 1.0);",
+      "}"
+    ].join("\n");
+
+    function compile(type, src){
+      var sh = gl.createShader(type);
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+      return sh;
+    }
+
+    var prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+    gl.useProgram(prog);
+
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+    var posLoc = gl.getAttribLocation(prog, "a_pos");
+    gl.enableVertexAttribArray(posLoc);
+    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+    var uRes = gl.getUniformLocation(prog, "u_resolution");
+    var uTime = gl.getUniformLocation(prog, "u_time");
+
+    function resize(){
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var w = Math.floor(canvas.clientWidth * dpr);
+      var h = Math.floor(canvas.clientHeight * dpr);
+      if (canvas.width !== w || canvas.height !== h){
+        canvas.width = w; canvas.height = h;
+        gl.viewport(0, 0, w, h);
+      }
+    }
+
+    function frame(ts){
+      resize();
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, ts * 0.001);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      if (!reduceMotion) requestAnimationFrame(frame);
+    }
+
+    if (reduceMotion){
+      resize();
+      gl.uniform2f(uRes, canvas.width, canvas.height);
+      gl.uniform1f(uTime, 0.0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    } else {
+      requestAnimationFrame(frame);
+      window.addEventListener("resize", resize);
+    }
+  } catch (e) {
+    // sin WebGL: queda el gradiente radial de respaldo del canvas (mapa + niebla)
+  }
+})();
+</script>
+</body>
+</html>
