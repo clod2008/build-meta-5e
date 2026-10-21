@@ -73,6 +73,7 @@
     line-height:1.5;
   }
   .card{
+    position:relative;
     width: min(560px, 100%);
     background: var(--panel);
     backdrop-filter: blur(14px);
@@ -85,6 +86,30 @@
     flex-direction:column;
     gap:22px;
   }
+  .corner{
+    position:absolute;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 1rem;
+    line-height:1;
+    color: var(--accent);
+    opacity:0.55;
+    pointer-events:none;
+    user-select:none;
+  }
+  .corner.tl{ top:7px; left:9px; }
+  .corner.tr{ top:7px; right:9px; }
+  .corner.bl{ bottom:7px; left:9px; }
+  .corner.br{ bottom:7px; right:9px; }
+  .rule{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: rgba(240,137,58,0.32);
+    text-align:center;
+    overflow:hidden;
+    white-space:nowrap;
+    user-select:none;
+  }
   .field{
     display:flex;
     flex-direction:column;
@@ -92,7 +117,7 @@
     min-width:0;
   }
   .field label{
-    font-family:'Cinzel', serif;
+    font-family:'JetBrains Mono', monospace;
     font-size: 0.72rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
@@ -171,7 +196,7 @@
     text-align:center;
   }
   .crest-x{
-    font-family:'Cinzel', serif;
+    font-family:'JetBrains Mono', monospace;
     color: var(--muted);
     font-size: 1.2rem;
     flex-shrink:0;
@@ -180,8 +205,6 @@
     display:flex;
     align-items:center;
     gap:20px;
-    padding-top: 18px;
-    border-top: 1px solid rgba(240,137,58,0.2);
   }
   @media (max-width: 480px){
     .result{ flex-direction: column; align-items:flex-start; gap: 14px; }
@@ -192,8 +215,29 @@
     height:96px;
     flex-shrink:0;
     color: var(--accent);
+    cursor:pointer;
+    transition: filter .15s;
   }
-  .d20 svg{ width:100%; height:100%; display:block; }
+  .d20:hover{ filter: brightness(1.2); }
+  .d20:active{ filter: brightness(0.9); }
+  .d20:focus-visible{ outline: 2px solid var(--accent2); outline-offset: 4px; }
+  .d20 svg{ width:100%; height:100%; display:block; transform-origin:50% 50%; }
+  .d20.rolling svg{ animation: d20-roll 0.9s cubic-bezier(.3,.1,.3,1); }
+  .d20.rolling .d20-score{ animation: d20-flicker 0.9s steps(2,end); }
+  @keyframes d20-roll{
+    0%   { transform: rotate(0deg) scale(1); }
+    35%  { transform: rotate(300deg) scale(1.1); }
+    65%  { transform: rotate(650deg) scale(0.94); }
+    100% { transform: rotate(1080deg) scale(1); }
+  }
+  @keyframes d20-flicker{
+    0%,100% { opacity:1; }
+    50% { opacity:0.25; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .d20.rolling svg{ animation:none; }
+    .d20.rolling .d20-score{ animation:none; }
+  }
   .d20-score{
     position:absolute;
     inset:0;
@@ -276,6 +320,11 @@
     text-align:center;
     line-height:1.5;
   }
+  footer .prompt{
+    font-family:'JetBrains Mono', monospace;
+    color: var(--accent);
+    opacity:0.7;
+  }
   @media (prefers-reduced-motion: reduce){
     canvas#bg{ opacity: 0.9; }
   }
@@ -287,17 +336,23 @@
 <div class="wrap">
   <header>
     <h1>Build Meta 5e</h1>
-    <p>Elegí raza y clase de D&amp;D 5e. Calcula qué tan alineados están los bonos de característica con lo que esa clase necesita — del 0 al 10.</p>
+    <p>Elegí raza y clase de D&amp;D 5e, o tocá el dado para que te tire una combinación meta. Calcula qué tan alineados están los bonos de característica con lo que esa clase necesita — del 0 al 10.</p>
   </header>
 
+  <div class="rule" aria-hidden="true">· · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·</div>
+
   <div class="card">
+    <span class="corner tl" aria-hidden="true">┌</span>
+    <span class="corner tr" aria-hidden="true">┐</span>
+    <span class="corner bl" aria-hidden="true">└</span>
+    <span class="corner br" aria-hidden="true">┘</span>
     <div class="selects">
       <div class="field">
-        <label for="race">Raza</label>
+        <label for="race">[ Raza ]</label>
         <select id="race"></select>
       </div>
       <div class="field">
-        <label for="cls">Clase</label>
+        <label for="cls">[ Clase ]</label>
         <select id="cls"></select>
       </div>
     </div>
@@ -310,8 +365,10 @@
 
     <div class="stats" id="stats"></div>
 
+    <div class="rule" aria-hidden="true">· · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·</div>
+
     <div class="result">
-      <div class="d20" id="d20">
+      <div class="d20" id="d20" role="button" tabindex="0" aria-label="Tirar el dado: sugerir una combinación meta">
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <polygon points="50,4 89.8,27 89.8,73 50,96 10.2,73 10.2,27" stroke="currentColor" stroke-width="3" fill="rgba(255,255,255,0.04)"/>
           <g stroke="currentColor" stroke-width="1.3" opacity="0.55">
@@ -336,7 +393,7 @@
   </div>
 
   <footer>
-    El puntaje compara solo bonos de característica (reglas clásicas de razas/subrazas del PHB) contra lo que cada clase pesa más. No contempla rasgos raciales, feats ni elección de trasfondo — es un heurístico para divertirse, no un tier list oficial. Íconos: sigilos propios, no arte oficial de Wizards of the Coast.
+    <span class="prompt">&gt;</span> El puntaje compara solo bonos de característica (reglas clásicas de razas/subrazas del PHB) contra lo que cada clase pesa más. No contempla rasgos raciales, feats ni elección de trasfondo — es un heurístico para divertirse, no un tier list oficial. Íconos: sigilos propios, no arte oficial de Wizards of the Coast.
   </footer>
 </div>
 
@@ -554,7 +611,56 @@
   clsSel.addEventListener("change", render);
   render();
 
-  // --- fondo: escamas de dragón sobre fuego en movimiento ---
+  // --- tirar el dado: elige al azar entre los mejores combos (meta) ---
+  var d20Rolling = false;
+
+  function pickMetaCombo(){
+    var combos = [];
+    RACES.forEach(function(race){
+      CLASSES.forEach(function(cls){
+        var result = scoreFor(race, cls);
+        combos.push({ race: race, cls: cls, norm: Math.round(result.norm * 10) / 10 });
+      });
+    });
+    combos.sort(function(a, b){ return b.norm - a.norm; });
+    var poolSize = Math.max(6, Math.round(combos.length * 0.12));
+    var top = combos.slice(0, poolSize);
+    return top[Math.floor(Math.random() * top.length)];
+  }
+
+  function rollD20(){
+    if (d20Rolling) return;
+    d20Rolling = true;
+    var noMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    d20El.classList.add("rolling");
+
+    var scrambleTimer = null;
+    if (!noMotion){
+      scrambleTimer = setInterval(function(){
+        scoreNumEl.textContent = (Math.random() * 10).toFixed(1);
+      }, 70);
+    }
+
+    setTimeout(function(){
+      if (scrambleTimer) clearInterval(scrambleTimer);
+      d20El.classList.remove("rolling");
+      var pick = pickMetaCombo();
+      raceSel.value = pick.race.id;
+      clsSel.value = pick.cls.id;
+      render();
+      d20Rolling = false;
+    }, noMotion ? 0 : 900);
+  }
+
+  d20El.addEventListener("click", rollD20);
+  d20El.addEventListener("keydown", function(e){
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar"){
+      e.preventDefault();
+      rollD20();
+    }
+  });
+
+  // --- fondo: mapa con niebla en movimiento, renderizado como arte ASCII ---
   var canvas = document.getElementById("bg");
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
