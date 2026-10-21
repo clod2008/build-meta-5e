@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: build-meta-5e
-    runtime: static
-    staticPublishPath: .
-    pullRequestPreviewsEnabled: false
