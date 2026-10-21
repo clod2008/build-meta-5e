@@ -125,10 +125,10 @@
   }
   .selects{
     display:grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap:14px;
   }
-  @media (max-width: 480px){
+  @media (max-width: 640px){
     .selects{ grid-template-columns: 1fr; }
   }
   select{
@@ -147,11 +147,19 @@
     outline: 2px solid var(--accent2);
     outline-offset: 2px;
   }
+  select:disabled{
+    opacity: 0.85;
+    cursor: default;
+    background-image: none;
+    padding-right: 12px;
+  }
   .crest{
     display:flex;
     align-items:center;
     justify-content:center;
-    gap: 18px;
+    flex-wrap:wrap;
+    row-gap: 14px;
+    gap: 14px;
   }
   .badge{
     display:flex;
@@ -159,6 +167,12 @@
     align-items:center;
     gap:8px;
     min-width:0;
+  }
+  .badge.bgd{ align-self:center; }
+  @media (max-width: 560px){
+    .badge .portrait{ width: 84px; height: 115px; }
+    .badge .ring{ width: 60px; height: 60px; }
+    .badge .ring svg{ width: 30px; height: 30px; }
   }
   .badge .portrait{
     width: 108px;
@@ -188,6 +202,14 @@
     border-color: rgba(255,206,107,0.4);
     box-shadow: 0 0 20px rgba(255,206,107,0.18) inset;
   }
+  .badge.bgd .ring{
+    width:58px;
+    height:58px;
+    color: var(--fg);
+    border-color: rgba(196,163,144,0.4);
+    box-shadow: 0 0 14px rgba(196,163,144,0.14) inset;
+  }
+  .badge.bgd .ring svg{ width:28px; height:28px; }
   .badge .ring svg{ width:36px; height:36px; }
   .badge .name{
     font-family:'Cinzel', serif;
@@ -336,7 +358,7 @@
 <div class="wrap">
   <header>
     <h1>Build Meta 5e</h1>
-    <p>Elegí raza y clase de D&amp;D 5e, o tocá el dado para que te tire una combinación meta. Calcula qué tan alineados están los bonos de característica con lo que esa clase necesita — del 0 al 10.</p>
+    <p>Elegí raza y clase de D&amp;D 5e — el trasfondo se elige solo, siempre el que más suma a esa combo. O tocá el dado para que te tire una combinación meta. Calcula qué tan alineados están los bonos de característica con lo que esa clase necesita — del 0 al 10.</p>
   </header>
 
   <div class="rule" aria-hidden="true">· · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·</div>
@@ -352,6 +374,10 @@
         <select id="race"></select>
       </div>
       <div class="field">
+        <label for="background">[ Trasfondo ]</label>
+        <select id="background" disabled></select>
+      </div>
+      <div class="field">
         <label for="cls">[ Clase ]</label>
         <select id="cls"></select>
       </div>
@@ -359,6 +385,8 @@
 
     <div class="crest">
       <div class="badge race"><img class="portrait" id="racePortrait" alt="" hidden><div class="ring" id="raceIcon"></div><div class="name" id="raceName"></div></div>
+      <div class="crest-x">+</div>
+      <div class="badge bgd"><div class="ring" id="bgIcon"></div><div class="name" id="bgName"></div></div>
       <div class="crest-x">+</div>
       <div class="badge cls"><img class="portrait" id="clsPortrait" alt=""><div class="ring" id="clsIcon"></div><div class="name" id="clsName"></div></div>
     </div>
@@ -393,7 +421,7 @@
   </div>
 
   <footer>
-    <span class="prompt">&gt;</span> El puntaje compara solo bonos de característica (reglas clásicas de razas/subrazas del PHB) contra lo que cada clase pesa más. No contempla rasgos raciales, feats ni elección de trasfondo — es un heurístico para divertirse, no un tier list oficial. Íconos: sigilos propios, no arte oficial de Wizards of the Coast.
+    <span class="prompt">&gt;</span> El puntaje suma bonos de característica de raza (reglas clásicas 2014) y de trasfondo (PHB 2024, +2/+1 o +1/+1/+1 entre sus tres características) contra lo que cada clase pesa más — mezcla ediciones a propósito para tener más combinaciones, no es RAW de una sola edición. No contempla rasgos raciales, feats, dotes de origen ni competencias de habilidad en el número — es un heurístico para divertirse, no un tier list oficial. Íconos: sigilos propios, no arte oficial de Wizards of the Coast.
   </footer>
 </div>
 
@@ -433,6 +461,25 @@
     { id:"mago",        label:"Mago",       builds:[{int:3,con:1,dex:1}],           wants:"INT, CON y DES" }
   ];
 
+  var BACKGROUNDS = [
+    { id:"acolito",     label:"Acólito",     abilities:["int","wis","cha"], skills:"Perspicacia y Religión" },
+    { id:"artesano",    label:"Artesano",    abilities:["str","dex","int"], skills:"Investigación y Persuasión" },
+    { id:"charlatan",   label:"Charlatán",   abilities:["dex","con","cha"], skills:"Engaño y Juego de Manos" },
+    { id:"criminal",    label:"Criminal",    abilities:["dex","con","int"], skills:"Juego de Manos y Sigilo" },
+    { id:"artista",     label:"Artista",     abilities:["str","dex","cha"], skills:"Acrobacias e Interpretación" },
+    { id:"granjero",    label:"Granjero",    abilities:["str","con","wis"], skills:"Trato con Animales y Naturaleza" },
+    { id:"guardia",     label:"Guardia",     abilities:["str","int","wis"], skills:"Atletismo y Percepción" },
+    { id:"guia",        label:"Guía",        abilities:["dex","con","wis"], skills:"Sigilo y Supervivencia" },
+    { id:"ermitano",    label:"Ermitaño",    abilities:["con","wis","cha"], skills:"Medicina y Religión" },
+    { id:"mercader",    label:"Mercader",    abilities:["con","int","cha"], skills:"Trato con Animales y Persuasión" },
+    { id:"noble",       label:"Noble",       abilities:["str","int","cha"], skills:"Historia y Persuasión" },
+    { id:"marinero",    label:"Marinero",    abilities:["str","dex","wis"], skills:"Acrobacias y Percepción" },
+    { id:"escriba",     label:"Escriba",     abilities:["dex","int","wis"], skills:"Investigación y Percepción" },
+    { id:"trotamundos", label:"Trotamundos", abilities:["dex","wis","cha"], skills:"Perspicacia y Sigilo" },
+    { id:"sabio",       label:"Sabio",       abilities:["con","int","wis"], skills:"Arcanos e Historia" },
+    { id:"soldado",     label:"Soldado",     abilities:["str","dex","con"], skills:"Atletismo e Intimidación" }
+  ];
+
   var CLASS_PORTRAIT = {
     barbaro: "Assets/clase-barbaro.png",
     bardo: "Assets/clase-bardo.png",
@@ -461,7 +508,8 @@
     semielfo: "Assets/raza-semielfo.png",
     semiorco: "Assets/raza-semiorco.png",
     tiefling: "Assets/raza-tiefling.png",
-    dragonborn: "Assets/raza-dragonborn.png"
+    dragonborn: "Assets/raza-dragonborn.png",
+    humano_variante: "Assets/raza-humano_variante.jpg"
   };
 
   var STAT_LABEL = {str:"FUE",dex:"DES",con:"CON",int:"INT",wis:"SAB",cha:"CAR"};
@@ -486,6 +534,25 @@
     dragonborn: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M8 28 C8 18 16 10 26 10 C30 10 32 8 34 5 C34 10 32 13 30 15 C38 17 42 23 40 30 C36 26 30 24 24 24 C18 24 12 26 8 28 Z" fill="currentColor"/><circle cx="30" cy="18" r="1.6" fill="var(--bg)"/><circle cx="37" cy="26" r="1" fill="var(--bg)"/></svg>'
   };
 
+  var BACKGROUND_ICON = {
+    acolito: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<rect x="20" y="22" width="8" height="18" rx="1.5" stroke="currentColor" stroke-width="2.2"/><path d="M24 10 C27 14 27 18 24 21 C21 18 21 14 24 10 Z" fill="currentColor"/></svg>',
+    artesano: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M10 30 H30 L28 36 H12 Z" fill="currentColor"/><rect x="17" y="23" width="6" height="8" fill="currentColor"/><line x1="27" y1="11" x2="37" y2="21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M25 9 L34 18 L30 22 L21 13 Z" fill="currentColor"/></svg>',
+    charlatan: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="24" cy="24" r="11" stroke="currentColor" stroke-width="2.2"/><path d="M24 18 L24 30 M20.5 21 Q24 18.5 27.5 21 M20.5 27 Q24 29.5 27.5 27" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+    criminal: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M8 20 C8 16 14 14 24 14 C34 14 40 16 40 20 C40 24 35 27 29 25 C27 24 21 24 19 25 C13 27 8 24 8 20 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="17" cy="20" r="2.2" fill="currentColor"/><circle cx="31" cy="20" r="2.2" fill="currentColor"/></svg>',
+    artista: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="18" cy="34" r="4.3" fill="currentColor"/><circle cx="32" cy="30" r="4.3" fill="currentColor"/><line x1="22.1" y1="34" x2="22.1" y2="12" stroke="currentColor" stroke-width="2"/><line x1="36.1" y1="30" x2="36.1" y2="10" stroke="currentColor" stroke-width="2"/><path d="M22.1 12 L36.1 10 L36.1 16 L22.1 18 Z" fill="currentColor"/></svg>',
+    granjero: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<line x1="24" y1="10" x2="24" y2="40" stroke="currentColor" stroke-width="2"/><path d="M24 14 L18 10 M24 14 L30 10 M24 20 L18 16 M24 20 L30 16 M24 26 L18 22 M24 26 L30 22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    guardia: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 8 L36 14 V24 C36 32 30 38 24 40 C18 38 12 32 12 24 V14 Z" stroke="currentColor" stroke-width="2.2"/><line x1="24" y1="18" x2="24" y2="30" stroke="currentColor" stroke-width="2" opacity="0.7"/></svg>',
+    guia: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="24" cy="24" r="13" stroke="currentColor" stroke-width="2.2"/><path d="M24 24 L30 14 L26 24 Z" fill="currentColor"/><path d="M24 24 L18 34 L22 24 Z" fill="currentColor" opacity="0.5"/><circle cx="24" cy="24" r="1.8" fill="currentColor"/></svg>',
+    ermitano: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M19 16 H29 L27 20 H21 Z" fill="currentColor"/><rect x="18" y="20" width="12" height="14" rx="2" stroke="currentColor" stroke-width="2.2"/><line x1="24" y1="10" x2="24" y2="16" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="27" r="3" fill="currentColor" opacity="0.6"/></svg>',
+    mercader: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<line x1="24" y1="10" x2="24" y2="34" stroke="currentColor" stroke-width="2.2"/><line x1="12" y1="16" x2="36" y2="16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M12 16 L8 24 Q12 28 16 24 Z" stroke="currentColor" stroke-width="1.6"/><path d="M36 16 L32 24 Q36 28 40 24 Z" stroke="currentColor" stroke-width="1.6"/><line x1="19" y1="34" x2="29" y2="34" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    noble: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M10 30 L10 20 L17 26 L24 16 L31 26 L38 20 L38 30 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><line x1="10" y1="30" x2="38" y2="30" stroke="currentColor" stroke-width="2.2"/></svg>',
+    marinero: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<circle cx="24" cy="12" r="3" stroke="currentColor" stroke-width="2"/><line x1="24" y1="15" x2="24" y2="34" stroke="currentColor" stroke-width="2.2"/><line x1="16" y1="20" x2="32" y2="20" stroke="currentColor" stroke-width="2" opacity="0.7"/><path d="M24 34 C24 38 18 39 16 34 M24 34 C24 38 30 39 32 34" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>',
+    escriba: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M34 8 C30 10 18 22 14 32 L18 36 C28 32 38 20 40 14 C41 11 38 7 34 8 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><line x1="14" y1="32" x2="10" y2="40" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+    trotamundos: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<ellipse cx="16" cy="16" rx="3.5" ry="5" fill="currentColor" transform="rotate(-15 16 16)"/><ellipse cx="30" cy="24" rx="3.5" ry="5" fill="currentColor" transform="rotate(15 30 24)"/><ellipse cx="16" cy="32" rx="3.5" ry="5" fill="currentColor" transform="rotate(-15 16 32)"/></svg>',
+    sabio: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 14 C20 11 13 11 9 13 V33 C13 31 20 31 24 34 C28 31 35 31 39 33 V13 C35 11 28 11 24 14 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><line x1="24" y1="14" x2="24" y2="34" stroke="currentColor" stroke-width="1.6"/></svg>',
+    soldado: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<line x1="24" y1="6" x2="24" y2="40" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M24 6 L30 14 L24 16 L18 14 Z" fill="currentColor"/><path d="M16 24 H32 L30 32 H18 Z" stroke="currentColor" stroke-width="1.6" opacity="0.7"/></svg>'
+  };
+
   var CLASS_ICON = {
     barbaro: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<line x1="14" y1="35" x2="33" y2="16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M25 11 C30 8 37 9 38 15 C39 20 34 23 29 22 L23 22 Z" fill="currentColor"/><circle cx="14" cy="35" r="2" fill="currentColor"/></svg>',
     bardo: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M14 30 C14 23 18 19 22 20 C27 21 28 27 25 32 C22 37 14 37 14 30 Z" stroke="currentColor" stroke-width="2.2"/><line x1="24" y1="21" x2="33" y2="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="33" cy="9" r="1.8" fill="currentColor"/><line x1="18" y1="26" x2="23" y2="28" stroke="currentColor" stroke-width="1.3"/><line x1="18" y1="30" x2="23" y2="31" stroke="currentColor" stroke-width="1.3"/></svg>',
@@ -501,7 +568,22 @@
     mago: '<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">'+RING+'<path d="M24 6 L34 33 H14 Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M11 33 C16 30 32 30 37 33" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M26 16 L27 18 L29 19 L27 20 L26 22 L25 20 L23 19 L25 18 Z" fill="currentColor"/></svg>'
   };
 
-  function scoreFor(race, cls){
+  function bestBackgroundSplit(abilities, weights){
+    var w = abilities.map(function(s){ return weights[s] || 0; });
+    var order = abilities.map(function(s, i){ return { s: s, w: w[i] }; }).sort(function(a, b){ return b.w - a.w; });
+    var rawA = order[0].w * 2 + order[1].w * 1;
+    var rawB = w[0] + w[1] + w[2];
+    if (rawA >= rawB){
+      var statsA = {};
+      statsA[order[0].s] = 2; statsA[order[1].s] = 1; statsA[order[2].s] = 0;
+      return { stats: statsA, raw: rawA };
+    }
+    var statsB = {};
+    abilities.forEach(function(s){ statsB[s] = 1; });
+    return { stats: statsB, raw: rawB };
+  }
+
+  function scoreFor(race, background, cls){
     var best = null;
     for (var b=0; b<cls.builds.length; b++){
       var weights = cls.builds[b];
@@ -515,12 +597,26 @@
         floatLeft--;
       }
 
+      var bg = bestBackgroundSplit(background.abilities, weights);
+      for (var s in bg.stats) stats[s] += bg.stats[s];
+
       var raw=0, maxW=0;
       for (var stat in weights){ raw += stats[stat]*weights[stat]; maxW += weights[stat]; }
       var norm = Math.max(0, Math.min(10, (raw/(maxW*2))*10));
 
-      if (!best || norm > best.norm) best = { norm: norm, weights: weights, stats: stats };
+      if (!best || norm > best.norm) best = { norm: norm, raw: raw, weights: weights, stats: stats, bgStats: bg.stats };
     }
+    return best;
+  }
+
+  function bestBackgroundFor(race, cls){
+    var best = null;
+    BACKGROUNDS.forEach(function(background){
+      var result = scoreFor(race, background, cls);
+      if (!best || result.raw > best.result.raw){
+        best = { background: background, result: result };
+      }
+    });
     return best;
   }
 
@@ -543,8 +639,10 @@
   }
 
   var raceSel = document.getElementById("race");
+  var bgSel   = document.getElementById("background");
   var clsSel  = document.getElementById("cls");
   fill(raceSel, RACES);
+  fill(bgSel, BACKGROUNDS);
   fill(clsSel, CLASSES);
   raceSel.value = "enano_montana";
   clsSel.value = "guerrero";
@@ -555,8 +653,10 @@
   var tierEl  = document.getElementById("tier");
   var whyEl   = document.getElementById("why");
   var raceIconEl = document.getElementById("raceIcon");
+  var bgIconEl   = document.getElementById("bgIcon");
   var clsIconEl  = document.getElementById("clsIcon");
   var raceNameEl = document.getElementById("raceName");
+  var bgNameEl   = document.getElementById("bgName");
   var clsNameEl  = document.getElementById("clsName");
   var clsPortraitEl = document.getElementById("clsPortrait");
   var racePortraitEl = document.getElementById("racePortrait");
@@ -564,7 +664,10 @@
   function render(){
     var race = RACES.find(function(r){ return r.id === raceSel.value; });
     var cls  = CLASSES.find(function(c){ return c.id === clsSel.value; });
-    var result = scoreFor(race, cls);
+    var picked = bestBackgroundFor(race, cls);
+    var background = picked.background;
+    var result = picked.result;
+    bgSel.value = background.id;
     var norm = Math.round(result.norm * 10) / 10;
     var tier = tierFor(norm);
 
@@ -574,8 +677,10 @@
     d20El.style.color = tier.color;
 
     raceIconEl.innerHTML = RACE_ICON[race.id];
+    bgIconEl.innerHTML = BACKGROUND_ICON[background.id];
     clsIconEl.innerHTML = CLASS_ICON[cls.id];
     raceNameEl.textContent = race.label;
+    bgNameEl.textContent = background.label;
     clsNameEl.textContent = cls.label;
     clsPortraitEl.src = CLASS_PORTRAIT[cls.id];
     clsPortraitEl.alt = cls.label;
@@ -602,8 +707,9 @@
     var hits = STAT_ORDER.filter(function(s){ return (result.weights[s]||0)>0 && (result.stats[s]||0)>0; })
       .map(function(s){ return STAT_LABEL[s] + " +" + result.stats[s]; });
     var phrase = hits.length
-      ? cls.label + " pide " + cls.wants + ". " + race.label + " te suma " + hits.join(", ") + "."
-      : cls.label + " pide " + cls.wants + ", y " + race.label + " no te da nada ahí — build de pura voluntad.";
+      ? cls.label + " pide " + cls.wants + ". " + race.label + " + " + background.label + " te suman " + hits.join(", ") + "."
+      : cls.label + " pide " + cls.wants + ", y " + race.label + " + " + background.label + " no te dan nada ahí — build de pura voluntad.";
+    phrase += " El trasfondo más meta para esta combo es " + background.label + " (competencia en " + background.skills + ").";
     whyEl.textContent = phrase;
   }
 
@@ -618,8 +724,8 @@
     var combos = [];
     RACES.forEach(function(race){
       CLASSES.forEach(function(cls){
-        var result = scoreFor(race, cls);
-        combos.push({ race: race, cls: cls, norm: Math.round(result.norm * 10) / 10 });
+        var picked = bestBackgroundFor(race, cls);
+        combos.push({ race: race, cls: cls, norm: Math.round(picked.result.norm * 10) / 10 });
       });
     });
     combos.sort(function(a, b){ return b.norm - a.norm; });
